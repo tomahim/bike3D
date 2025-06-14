@@ -121,10 +121,10 @@ export class RoadGenerator {
     // Generate road from GPS coordinates
     generateRoad(coordinates, options = {}) {
       const {
-        roadWidth = 10,
-        roadHeight = 0.5,
-        scale = 1000,
-        smoothness = 0.5
+        roadWidth,
+        roadHeight,
+        scale,
+        smoothness
       } = options;
   
       if (coordinates.length < 2) {
@@ -140,15 +140,41 @@ export class RoadGenerator {
       this.pathPoints = coordinates.map(coord => 
         this.latLngToWorld(coord.lat, coord.lng, centerLat, centerLng, scale)
       );
+
+      // Filter out points that are too close together
+      this.pathPoints = this.filterClosePoints(this.pathPoints, 70);
   
       // Create smooth curve
       this.roadPath = new THREE.CatmullRomCurve3(this.pathPoints);
       this.roadPath.tension = smoothness;
+      this.roadPath.curveType = 'catmullrom'; 
   
       // Generate road geometry
       this.createRoadGeometry(roadWidth, roadHeight);
       
       return this.roadPath;
+    }
+
+
+    // Filter out points that are too close
+    filterClosePoints(points, minDistance) {
+        if (points.length <= 2) return points;
+        
+        const filtered = [points[0]]; // Always keep first point
+        
+        for (let i = 1; i < points.length - 1; i++) {
+        const lastKept = filtered[filtered.length - 1];
+        const current = points[i];
+        
+        if (lastKept.distanceTo(current) >= minDistance) {
+            filtered.push(current);
+        }
+        }
+        
+        // Always keep last point
+        filtered.push(points[points.length - 1]);
+        
+        return filtered;
     }
   
     createRoadGeometry(width, height) {
@@ -208,7 +234,7 @@ export class RoadGenerator {
         // Matériau de la route
         const material = new THREE.MeshLambertMaterial({ 
           color: 0x333333,
-          side: THREE.DoubleSide 
+          side: THREE.DoubleSide,
         });
       
         // Supprimer l'ancienne route si elle existe
@@ -264,7 +290,7 @@ export class RoadGenerator {
         this.bike = bike;
         this.roadGenerator = roadGenerator;
         this.progress = 0;
-        this.speed = 0.001; // Adjust speed as needed
+        this.speed = 0.0002; // Adjust speed as needed
         this.isMoving = false;
       }
     
@@ -302,12 +328,18 @@ export class RoadGenerator {
 
 // Make sure these are defined before using RoadGenerator
 // Your GPS coordinates
-const gpsCoordinates = [
-    { lat: 40.7128, lng: -74.0060 },
-    { lat: 40.7130, lng: -74.0058 },
-    { lat: 40.7135, lng: -74.0055 },
-    { lat: 40.7140, lng: -74.0050 }
-  ];
+
+const gpsCoordinates = parsedFile.tracks[0].points.map(point => ({
+    lat: point.latitude,
+    lng: point.longitude
+}));
+
+// const gpsCoordinates = [
+//     { lat: 40.7128, lng: -74.0060 },
+//     { lat: 40.7130, lng: -74.0058 },
+//     { lat: 40.7135, lng: -74.0055 },
+//     { lat: 40.7140, lng: -74.0050 }
+//   ];
   
   // Basic Three.js setup
   const scene = new THREE.Scene();
@@ -349,10 +381,10 @@ addGuiObjectInFolder(gui, 'camera', camera, [
   // Generate road
   const roadGenerator = new RoadGenerator(scene);
   const roadPath = roadGenerator.generateRoad(gpsCoordinates, {
-    roadWidth: 8,
+    roadWidth: 10,
     roadHeight: 0.3,
     scale: 100000,
-    smoothness: 0.3
+    smoothness: 0.1
   });
   
   // Setup bike controller
