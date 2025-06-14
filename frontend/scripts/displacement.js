@@ -21,7 +21,7 @@ const gui = new dat.GUI();
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x7ec8e3);
 
-const geometry = new THREE.PlaneGeometry(10, 10, 64, 64);
+const geometry = new THREE.PlaneGeometry(30, 30, 64, 64);
 const material = new THREE.MeshStandardMaterial({
   color: 'white',
   map: groundmaps['grass'],
@@ -37,18 +37,19 @@ scene.add(plane);
 const camera = new THREE.PerspectiveCamera(
   70,
   window.innerWidth / window.innerHeight,
-  2,
-  10
+  0.01,
+  1000
 );
 camera.position.x = 0;
-camera.position.z = 9;
+camera.position.z = 24;
 
 // light
 const light = new THREE.PointLight(0xffffff, 2);
 light.position.x = 2;
-light.position.y = 3;
+light.position.y = 19;
 light.position.z = 4;
-light.intensity = 10.5;
+light.intensity = 180;
+light.decay = 1.4;
 const lightProps = { color: '#fff' };
 
 // gui
@@ -71,6 +72,8 @@ addGuiObjectInFolder(gui, 'camera', camera, [
   'zoom',
   'near',
   'far',
+  'fov',
+  'aspect'
 ]);
 const lightFolder = addGuiObjectInFolder(gui, 'light', light, [
   'position.x',
